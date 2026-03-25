@@ -264,7 +264,9 @@ class LightGBMLSS:
             study_name=None,
             silence=False,
             seed=None,
-            hp_seed=None
+            hp_seed=None,
+            sampler = None,
+            return_study = False
     ):
         """
         Function to tune hyperparameters using optuna.
@@ -386,10 +388,11 @@ class LightGBMLSS:
         if silence:
             optuna.logging.set_verbosity(optuna.logging.WARNING)
 
-        if hp_seed is not None:
-            sampler = TPESampler(seed=hp_seed)
-        else:
-            sampler = TPESampler()
+        if sampler is None:  
+            if hp_seed is not None:
+                sampler = TPESampler(seed=hp_seed)
+            else:
+                sampler = TPESampler()
 
         pruner = optuna.pruners.MedianPruner(n_startup_trials=10, n_warmup_steps=20)
         study = optuna.create_study(sampler=sampler, pruner=pruner, direction="minimize", study_name=study_name)
@@ -410,7 +413,10 @@ class LightGBMLSS:
         for key, value in opt_param.params.items():
             print("    {}: {}".format(key, value))
 
-        return opt_param.params
+        if return_study:
+            return opt_param.params, study
+        else:
+            return opt_param.params
 
     def predict(self,
                 data: pd.DataFrame,
